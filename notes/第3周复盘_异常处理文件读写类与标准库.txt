@@ -1,0 +1,370 @@
+════════════════════════════════════════════════════════
+第 3 周学习复盘：异常处理 · 文件读写 · 面向对象 · 标准库
+（离线学习版：无电脑也能看，含完整代码+理论+自测题）
+════════════════════════════════════════════════════════
+
+【本周学会了什么】
+  从"程序会崩溃"进化到"程序摔倒了能爬起来、数据关掉还在、代码像积木"。
+  四课知识 + 周项目（待办事项管理器）：
+    ① 异常处理 try/except（防崩溃计算器）
+    ② 文件读写 open/with（日记本）
+    ③ 面向对象 class（宠物、银行账户）
+    ④ 标准库 os/datetime（智能日记、打卡记录器）
+    ⑤ 周项目：待办事项管理器（格式设计 + 读-改-写回）
+
+────────────────────────────────────────
+一、核心知识理论精讲
+────────────────────────────────────────
+
+【1.1 异常处理 —— 让程序"摔倒了爬起来"】
+
+  什么是异常：程序运行时的错误，会【中断程序】。
+    int("abc")          → ValueError（转换失败）
+    5 / 0               → ZeroDivisionError（除零）
+    d["不存在的键"]      → KeyError（键不存在）
+    [1,2,3][99]         → IndexError（索引越界）
+    open("没有.txt")    → FileNotFoundError（文件不存在）
+
+  try/except 基本语法：
+    try:
+        可能出错的代码
+    except ValueError:        # 出错时跳到这里
+        处理代码
+    # 程序继续运行，不崩溃！
+
+  执行流程：try 出错 → 立刻跳 except → 处理完继续往下 → 永不崩溃。
+
+  一个 try 可以跟多个 except（各接各的错误）：
+    try:
+        b = float(input("除数："))
+        print(10 / b)
+    except ValueError:            # 输入 abc
+        print("输入的不是数字")
+    except ZeroDivisionError:     # 输入 0
+        print("除数不能为 0")
+
+  as e 拿错误信息：
+    except ValueError as e:
+        print("原因：", e)
+
+  else / finally：
+    try: ... except: ...
+    else:      # 没出错才执行
+    finally:   # 无论出不出错都执行（关文件用）
+
+  两种防御哲学：
+    LBYL（先检查）：isdigit() 先看车再过马路
+    EAFP（异常处理）：先走，被撞了再处理
+    try/except 更强大：能接住任何错误，还能处理 "85.5" 这种小数
+
+  黄金套路：安全输入函数
+    def get_number(prompt):
+        while True:
+            try:
+                return float(input(prompt))   # 成功 → 返回
+            except ValueError:
+                print("输入的不是数字，请重新输入！")
+
+  要点：except 里处理完要【return】提前结束，否则程序会继续往下
+        用到没赋值的变量 → UnboundLocalError！
+
+【1.2 文件读写 —— 让数据"活到程序关掉之后"】
+
+  写文件（三件套）：
+    f = open("a.txt", "w", encoding="utf-8")
+    f.write("内容\n")
+    f.close()
+
+  with 语句（自动关闭，最推荐）：
+    with open("a.txt", "w", encoding="utf-8") as f:
+        f.write("内容\n")
+    # 缩进结束自动关闭，不用 close()
+
+  三种模式：
+    "r" 读    文件不存在 → FileNotFoundError
+    "w" 写    会【清空覆盖】原文件！
+    "a" 追加  接在末尾写，不清空
+
+  读文件：
+    with open("a.txt", "r", encoding="utf-8") as f:
+        content = f.read()          # 全部 → 一个字符串
+        lines = f.readlines()       # 每行 → 列表元素
+        for line in f:              # 最常用：逐行
+            print(line.strip())     # strip 去行尾 \n
+
+  【编码坑】encoding="utf-8" 必须写！否则中文报错。
+  【拼写坑】utf-8 不是 uft-8！写错报 LookupError。
+
+  【换行坑】write 不会自动换行！每条记录末尾要加 \n，
+           否则所有内容粘成一行（功能全乱）。
+
+  防"文件不存在"崩溃（两种都行）：
+    # 方式 1：try/except
+    try:
+        with open("a.txt", "r", encoding="utf-8") as f: ...
+    except FileNotFoundError:
+        print("还没有文件")
+    # 方式 2：os.path.exists（更直白）
+    if os.path.exists("a.txt"): ...
+
+  核心套路：读-改-写回（没有数据库时的"增删改"）
+    改文件 = 读出全部 → 改列表 → 用 "w" 重写整个文件
+    删除单条：lines.pop(索引) → 重写
+    标记状态：拆行 split → 改某段 → join 拼回 → 重写
+
+  【配置管理】文件名定义成常量，处处引用：
+    FILE_NAME = "任务清单.txt"    # 定义一次！
+    with open(FILE_NAME, ...)     # 全程序用同一个
+    好处：不会抄错文件名；想改名只改一处。
+
+【1.3 面向对象 class —— 把"数据+功能"打包】
+
+  类 vs 对象：类是"模具"，对象是"产品"。
+    类（Student）定义长什么样 → 一个
+    对象（s1、s2）具体的、互不影响 → 无数个
+
+  三个新东西：
+    __init__  构造方法：创建对象时【自动执行】，初始化属性
+    self      指"当前这个对象自己"
+    方法      类里的函数（第一个参数永远是 self）
+
+  基本结构：
+    class Student:
+        def __init__(self, name, score):
+            self.name = name          # 属性：把参数"贴"到对象上
+            self.score = score
+
+        def introduce(self):          # 方法
+            print(f"我是{self.name}")
+
+    s1 = Student("小明", 92)     # 创建对象（自动调 __init__）
+    s1.introduce()               # 调用方法 = 对象.方法()
+    print(s1.score)              # 访问属性
+
+  【关键步骤】先造对象，再调方法！
+    类名(参数) = 造对象
+    对象.方法() = 调用
+    忘了造对象直接 类名.方法() → TypeError: missing self！
+
+  方法改自己的数据：
+    def feed(self):
+        self.hunger = self.hunger - 20    # 改 self.属性
+        if self.hunger < 0:               # 改了就要护住！
+            self.hunger = 0
+    铁律：方法改了哪个属性，就要护住哪个属性（设上下限）。
+
+【1.4 标准库 os/datetime —— 系统工具】
+
+  datetime（时间）：
+    from datetime import datetime        # ✅ 直接导入"类"
+    now = datetime.now()                 # 当前时间
+    now.strftime("%Y-%m-%d %H:%M:%S")    # 格式化
+
+    # ❌ 错误：import datetime 后直接 datetime.now()
+    #    模块没有 now 方法！要 datetime.datetime.now()
+    #    口诀：from 工具箱 import 工具，直接用
+
+    格式码（% 永远在字母【左边】！）：
+      %Y 年  %m 月  %d 日  %H 时  %M 分  %S 秒
+      "%Y-%m-%d %H:%M:%S" → "2026-09-06 14:30:45"
+
+  os（文件管理）：
+    import os
+    os.path.exists("a.txt")     # 存在吗 → True/False
+    os.path.getsize("a.txt")    # 多大（字节）
+    os.remove("a.txt")          # 删除文件
+    os.listdir()                # 文件夹里有什么
+
+  【时间戳注意】时间要在"事件发生那一刻"取！
+    错误：程序开头取一次 time_str，所有任务同一个时间
+    正确：每次添加任务时 datetime.now()
+
+────────────────────────────────────────
+二、项目核心代码与考点
+────────────────────────────────────────
+
+【项目 1：防崩溃计算器】（异常处理）
+  def get_number(prompt):            # 安全输入函数
+      while True:
+          try:
+              return float(input(prompt))
+          except ValueError:
+              print("输入的不是数字，请重新输入！")
+  除法分支：except ValueError 和 except ZeroDivisionError 分开接
+  考点：多 except / 安全输入 / return 提前结束
+
+【项目 2：日记本】（文件读写）
+  with open("日记.txt", "a", encoding="utf-8") as f:
+      f.write(note + "\n")           # 记得 \n！
+  考点：with / "a" 追加 / utf-8 / 持久化（关掉重开数据还在）
+
+【项目 3：智能日记】（datetime + os）
+  time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+  f.write(f"[{time_str}] {note}\n")
+  if os.path.exists("日记.txt"): ...   # 读前检查
+  os.path.getsize("日记.txt")          # 文件大小
+  os.remove("日记.txt")                # 删除文件
+  考点：时间戳 / exists / getsize / remove
+
+【项目 4：虚拟宠物】（类入门）
+  class Pet:
+      def __init__(self, name):
+          self.name = name
+          self.hunger = 30
+          self.happiness = 70
+      def feed(self):
+          self.hunger = self.hunger - 20   # 改自己的属性
+          if self.hunger < 0: self.hunger = 0   # 护下限
+          if self.happiness > 100: self.happiness = 100  # 护上限！
+  pet = Pet("咪咪")    # 造对象
+  pet.feed()           # 对象.方法()
+  考点：__init__ / self / 方法改属性 / "改了哪个护哪个"
+  踩坑：feed 改了 happiness 却忘了护 → 快乐突破 100！
+
+【项目 5：银行账户】（类 + 先检查 + 异常）
+  class BankAccount:
+      def __init__(self, owner):
+          self.owner = owner
+          self.balance = 0.0
+      def withdraw(self, amount):       # 或方法里 input
+          if amount <= self.balance:    # 先检查够不够
+              self.balance -= amount
+          else:
+              print("余额不足！")        # 不够就拒绝
+  my = BankAccount("小明")              # 先造对象！
+  my.withdraw(100)
+  考点：先检查再操作 / 造对象 / try/except 保护输入
+
+【项目 6：打卡记录器】（持久化统计）
+  # 写：时间 + 内容 + \n
+  # 统计：从文件数行数（不是内存变量！）
+  count = 0
+  with open("打卡.txt", "r", encoding="utf-8") as f:
+      for line in f:
+          count = count + 1             # 行数 = 次数
+  踩坑：times 变量重启清零 → 必须从文件数！
+
+【项目 7：待办事项管理器】（周项目：格式设计+读改写）
+  数据格式（关键设计！每行一个任务）：
+    任务内容 | 完成状态(0/1) | 时间
+    例：买菜|0|2026-09-06 09:30
+  添加：f.write(f"{task}|0|{time_str}\n")
+  查看：拆行 parts = line.strip().split("|") → [x]/[ ]
+  标记完成（读→改→写回）：
+    parts = lines[idx].strip().split("|")
+    parts[1] = "1"                        # 改成完成
+    lines[idx] = "|".join(parts) + "\n"   # join 拼回
+    # 然后 open("w") 重写整个文件！（注意是 w 不是 r！）
+  删除：lines.pop(idx) → 重写
+  统计：数行数 + 数 parts[1]=="1" 的行
+  考点：数据格式先行 / split-join 往返 / 读-改-写回 / 常量文件名
+
+────────────────────────────────────────
+三、避坑手册（第 3 周所有坑，一条条背）
+────────────────────────────────────────
+  坑 1：encoding="uft-8" 拼错（u-f-t）
+       → LookupError。正确：utf-8（u-t-f）
+  坑 2：写中文不写 encoding="utf-8"
+       → 中文报错（Windows 默认编码不认）
+  坑 3：import datetime 后 datetime.now()
+       → AttributeError。模块没有 now！
+       正确：from datetime import datetime 或 datetime.datetime.now()
+  坑 4：格式串写错 "%Y-m%-d% H%:M%:S%"
+       → ValueError。% 永远在字母左边！"%Y-%m-%d %H:%M:%S"
+  坑 5：用 "w" 写日记 → 覆盖旧内容
+       → 追加用 "a"！
+  坑 6：write 忘了 \n → 所有记录粘成一行
+       → 每条记录末尾加 \n
+  坑 7：退出分支忘了 break → 程序关不掉
+       → while True 的每个退出分支都要检查 break！
+  坑 8：忘了造对象直接 account.deposit()
+       → TypeError: missing self。先 对象 = 类(参数)！
+  坑 9：except 里提示完忘了 return
+       → 继续往下用到没赋值的变量 → UnboundLocalError
+  坑 10：open(..., "r") 却调 f.write()
+       → UnsupportedOperation: not writable。写回用 "w"！
+  坑 11：文件名抄错（学习记录.txt vs 学习内容.txt）
+       → 功能静默失效。用 FILE_NAME 常量定义一次！
+  坑 12：数据格式前后不统一（存用空格，读用 |）
+       → IndexError。全程序只用一种格式！
+  坑 13：统计用内存变量（times），重启清零
+       → 从文件数行数，账本才是真的！
+  坑 14：open("任务清单") 少了 .txt / 少了 as f
+       → FileNotFoundError / f undefined
+  坑 15：pop vs remove
+       → pop(索引)：弹出并返回；remove(内容)：只删不还
+  坑 16：idx = int(num) 用了菜单变量
+       → 新输入用新变量（num1 就用 num1）！
+
+────────────────────────────────────────
+四、万能套路汇总（第 3 周新增）
+────────────────────────────────────────
+  ① 安全输入函数（while + try/except + return float）
+  ② with 自动关文件（不用 close）
+  ③ 读-改-写回（改文件数据三步曲）
+  ④ 数据格式先行（功能需要什么信息，格式就存什么）
+  ⑤ 配置集中管理（FILE_NAME 常量，定义一次处处引用）
+  ⑥ 造对象再调方法（类名(参数) → 对象.方法()）
+  ⑦ 改了哪个属性就护哪个属性（设上下限）
+
+────────────────────────────────────────
+五、离线自测题（先自己答，再看答案）
+────────────────────────────────────────
+  Q1. 一个 try 可以跟几个 except？为什么分开写？
+  Q2. int("abc") 抛什么异常？文件不存在抛什么？
+  Q3. "r" "w" "a" 三种模式的区别？想保留旧内容用哪个？
+  Q4. 为什么写中文必须 encoding="utf-8"？写错拼写会怎样？
+  Q5. with open(...) as f 的好处是什么？
+  Q6. import datetime 和 from datetime import datetime 的区别？
+  Q7. "%Y-%m-%d %H:%M:%S" 里每个格式码代表什么？
+  Q8. 类是什么？对象是什么？为什么忘了造对象会报 missing self？
+  Q9. 方法里 self.xxx 是什么？改了属性后为什么要"护住"它？
+  Q10. 标记完成/删除任务为什么用"读-改-写回"而不是直接改文件？
+  Q11. 统计打卡次数为什么不能用一个变量累加？应该怎么做？
+  Q12. pop 和 remove 的区别？删除任务为什么用 pop？
+
+  【答案】
+  A1. 可以跟多个 except，每个接一种错误类型，各处理各的
+      （输入 abc 提示"不是数字"，除以 0 提示"除数不能为0"）。
+  A2. ValueError（值错误）和 FileNotFoundError（文件不存在）。
+  A3. r 读、w 清空覆盖写、a 追加写。保留旧内容用 "a"。
+  A4. Windows 默认编码不认中文；不写 utf-8 会报 UnicodeEncodeError。
+      拼错（uft-8）会报 LookupError: unknown encoding。
+  A5. 缩进结束自动关闭文件，永远不会忘记 close()。
+  A6. import datetime 拿到模块（工具箱）；from ... import datetime
+      直接拿到里面的类（工具）。模块本身没有 now 方法。
+  A7. %Y年 %m月 %d日 %H时 %M分 %S秒。
+  A8. 类是模具（模板），对象是用模具做出的具体产品。
+      类的方法需要 self（对象自己）；没对象 self 无人可指 → 报错。
+  A9. self.xxx 是这个对象自己的属性。改了属性就要检查上下限
+      （护住），否则数值会突破范围（快乐值到 120）。
+  A10. 文件是"一整块"，不能只挖中间。必须：读出全部到列表 →
+       改列表 → 用 "w" 重写整个文件。
+  A11. 内存变量在程序重启后归零。应该每次从文件数行数
+       （行数 = 记录数）。
+  A12. pop(索引) 按位置删除并【返回】删掉的元素；
+       remove(内容) 按内容删除但不返回。
+       任务内容可能重复，按用户选的编号删必须用 pop。
+
+────────────────────────────────────────
+六、本周口诀
+────────────────────────────────────────
+  try 试运行，except 接异常，一个 try 多 except；
+  with 自动关，w 覆盖 a 追加，utf-8 要写对；
+  类是模具，对象是产品，先造对象再调方法；
+  self 指自己，改了属性要护住；
+  datetime 格式化，% 在字母左边；
+  读改写给回，格式先想好；
+  文件名字常量，定义一次处处用。
+
+════════════════════════════════════════════════════════
+【下一步预告】
+  第 4 周：Python 进阶 + Git
+    · 列表推导式 / lambda / map / filter（写更短的代码）
+    · Git 版本控制（给项目"存档"，能回到任何历史版本）
+    · 把前 3 周的项目推到 GitHub（建立作品集！）
+  复习入口：
+    · 学习地图：notes/学习地图_第1-2周.md
+    · 第1周复盘：notes/第1周复盘_变量判断循环随机数.txt
+    · 第2周复盘：notes/第2周复盘_数据结构与函数.txt
+════════════════════════════════════════════════════════
