@@ -25,7 +25,7 @@ class Friends:
             print(f"{self.name}特别喜欢你！")
         elif self.Affection > 70:
             print(f"{self.name}对你有好感")
-        else:
+        else:q
             print(f"{self.name}对你没有感觉")
     def feed2(self):
         self.hunger = self.hunger + 20

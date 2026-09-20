@@ -1,0 +1,314 @@
+════════════════════════════════════════════════════════
+第 4 周学习复盘：进阶语法 · Git 版本控制 · GitHub 作品集
+（离线学习版：无电脑也能看，含完整代码+理论+自测题）
+════════════════════════════════════════════════════════
+
+【本周学会了什么】
+  从"能写代码"进化到"写得优雅 + 管得住版本"。
+  两课内容：
+    ① 进阶语法：列表推导式 / lambda / sorted(key=) / map / filter
+    ② Git 版本控制：init / status / add / commit / log / restore
+    ③ GitHub：远程仓库、推送、作品集（求职利器）
+  里程碑：GitHub 作品集仓库上线！🎉
+
+════════════════════════════════════
+一、核心知识理论精讲
+════════════════════════════════════
+
+【1.1 列表推导式 —— 把"循环+append"缩成 1 行】
+
+  以前的写法（3 行）：
+    result = []
+    for x in numbers:
+        result.append(x * 2)
+
+  列表推导式（1 行）：
+    result = [x * 2 for x in numbers]
+
+  【格式模板】（背下来）：
+    [对 x 做什么  for x in 列表  if 条件]
+
+  三种变体：
+    加工：[x ** 2 for x in nums]                  # 平方
+    过滤：[x for x in nums if x >= 60]            # 只要及格的
+    字典：[name for name, s in students.items() if s >= 60]
+
+  【什么时候用】一行能写完、看得懂 → 用推导式；
+              逻辑复杂超过一行 → 老老实实用 for 循环。
+              （代码是给人看的，可读性第一！）
+
+【1.2 lambda —— 一行小函数】
+
+  对比 def：
+    def double(x):        # def 写法
+        return x * 2
+    double = lambda x: x * 2    # lambda 写法
+
+  【格式】：lambda 参数: 返回值
+
+  【最重要的用途：给 sorted 当"排序钥匙"】
+    students = {"小明": 92, "小红": 58, "小刚": 76}
+
+    sorted(students.items(), key=lambda x: x[1])
+    # [('小红', 58), ('小刚', 76), ('小明', 92)]
+
+    sorted(students.items(), key=lambda x: x[1], reverse=True)
+    # [('小明', 92), ('小刚', 76), ('小红', 58)]  ← 从高到低
+
+  【逐层拆解 lambda x: x[1]】：
+    ① prices.items() 给出 [('苹果', 3.5), ('香蕉', 2.0), ...] 键值对
+    ② 每个元素是元组 (名字, 价格)
+    ③ key= 告诉 sorted："别按元素本身排，按 key 算出来的值排"
+    ④ lambda x: x[1] 就是那个"提取函数"：
+         x     = 每个元组（参数）
+         x[0]  = 第 1 个位置（名字）
+         x[1]  = 第 2 个位置（价格）
+    【口诀】：想按谁排，就提取谁（x[0] 名字 / x[1] 值）
+
+【1.3 map / filter（了解即可）】
+
+    nums = [1, 2, 3, 4]
+    list(map(lambda x: x * 2, nums))     # [2, 4, 6, 8]  批量加工
+    list(filter(lambda x: x > 2, nums))  # [3, 4]        过滤
+
+  ⚠️ Python 3 里它们返回"迭代器"，要用 list() 包一下。
+  💡 其实推导式都能替代，且更直观：
+      [x * 2 for x in nums]          # 代替 map
+      [x for x in nums if x > 2]     # 代替 filter
+  所以 map/filter 认识即可，优先用推导式。
+
+【1.4 ⚠️ 浮点数精度坑（真实踩过）】
+
+  问题现象：
+    prices = {"苹果": 3.5, ...}
+    [p * 0.8 for p in prices.values()]
+    # 输出 [2.8000000000000003, 1.6, ...]  ← 尾巴！
+
+  原因：计算机用二进制存小数，0.8 在二进制里是无限循环小数，
+       只能存近似值 → 计算结果有极小误差。
+       （经典例子：0.1 + 0.2 = 0.30000000000000004）
+
+  解法：用 round() 四舍五入
+    [round(p * 0.8, 2) for p in prices.values()]
+    # [2.8, 1.6, 12.0, 36.0, 48.0]  ✅
+
+  【铁律】：凡和"钱"打交道，算完就 round(结果, 2)！
+  这不是 bug，是全世界编程语言的通病（Java/C 都一样）。
+
+【1.5 遍历字典的三种方式（第 4 周又踩一次）】
+
+  ⚠️ for p in prices:   ← p 拿到的是【键】（水果名）不是价格！
+
+    for k in 字典            # 只拿键（裸遍历默认给键）
+    for v in 字典.values()   # 只拿值
+    for k, v in 字典.items() # 键值都拿（最常用）
+
+  推导式里同理：
+    [p * 0.8 for p in prices.values()]              # 要值 → values()
+    [name for name, p in prices.items() if p >= 30] # 要名字 → items()
+
+  【判断法】：我要键？值？还是都要？
+    只要值 → values()；键值都要 → items() 拆包
+
+════════════════════════════════════
+二、Git 版本控制（本周重头戏）
+════════════════════════════════════
+
+【2.1 为什么需要 Git（痛点）】
+  · 改代码改崩了 → 回不到昨天能跑的版本
+  · 文件夹里 main.py / main_改.py / main_最终版.py → 混乱
+  · 不敢删，怕丢东西
+  Git = 给项目装"存档读档"功能，每个存档点叫【提交 commit】。
+
+【2.2 核心概念：三个区域（书包比喻）】
+  工作区（你正在改的文件）
+     ↓ git add          ← 把作业装进书包
+  暂存区（准备提交的改动）
+     ↓ git commit       ← 交作业存档
+  版本库（所有历史存档）
+
+【2.3 五个必会命令】
+  git init                    开启版本控制（只做一次）
+  git status                  看状态（最常用！红=未add，绿=已add）
+  git add .                   把所有改动加入暂存区（. = 当前目录）
+  git commit -m "说明"         存档！
+  git log --oneline           查看历史（简洁一行一条；git log 后按 q 退出）
+
+【2.4 日常流程（背下来）】
+  git status → git add . → git commit -m "完成XX功能"
+  【习惯】每完成一个小功能就存一次档，别攒一天！
+
+【2.5 时光机】
+  git restore 文件名            撤销未提交的改动（读档）
+  git reset --hard 存档号        回到历史某版本（⚠️ 丢弃之后的改动）
+
+  【亲测体验】：故意把文件改坏 → git restore hello.py → 文件瞬间恢复！
+
+【2.6 GitHub —— 云端备份 + 作品集】
+  GitHub = 网上的代码托管网站，作用：
+    ① 云备份（电脑坏了代码还在）
+    ② 作品集（求职时给面试官看的"活简历"）⭐
+    ③ 协作（多人开发）
+
+  推送流程：
+    ① 网页新建仓库（New repository，名字用英文）
+    ② git remote add origin 仓库地址
+    ③ git branch -M main          （分支改名，GitHub 默认 main）
+    ④ git push -u origin main     （第一次）
+    ⑤ 以后：git add . → git commit -m "说明" → git push
+
+  【⚠️ 最大的坑】push 要求输入"密码"时，必须用【个人访问令牌 Token】，
+    不是账号密码！GitHub 2021 年起取消密码认证。
+    Token 生成路径：Settings → Developer settings → Personal access tokens
+                   → Tokens (classic) → Generate new token → 勾 repo 权限
+
+  【最省心路线】PyCharm 一键分享：
+    菜单 Git → GitHub → Share Project on GitHub
+    （PyCharm 帮你处理登录授权，不用手动搞 Token）
+
+【2.7 .gitignore —— 不该上传的东西】
+  在项目根目录建 .gitignore 文件，写入要忽略的内容：
+    .idea/            # 编辑器配置（每人不同）
+    __pycache__/      # Python 缓存
+    *.pyc
+    日记.txt           # 个人数据文件
+  作用：只上传代码，不上传个人配置和隐私数据。
+
+【2.8 记忆口诀】
+  init 开仓库，status 看状态；
+  add 装书包，commit 存档点；
+  log 查历史，restore 回过去；
+  push 上云端，GitHub 当作品集；
+  小步常提交，说明写清楚。
+
+【2.9 常见坑】
+  坑 1：git add.git status   ← 两条命令挤一起 + 少了空格
+       → 正确：git add . （换行） git status
+  坑 2：--online 拼错（应为 --oneline，one+line）
+       → 报 fatal: unrecognized argument
+  坑 3：忘了 git add 就 commit → "nothing to commit"
+  坑 4：commit 说明写"改了一下" → 以后自己看不懂
+  坑 5：嵌套仓库（子文件夹里也有 .git）→ 冲突，需加进 .gitignore
+  坑 6：push 输账号密码 → 认证失败，要用 Token
+  坑 7：把 - 和单词挤在一起、单词拼错 → Git 命令必须严格拼写
+
+════════════════════════════════════
+三、项目与实操记录
+════════════════════════════════════
+
+【项目 1：成绩快捷处理】
+  scores = [92, 58, 85, 45, 76]
+  students = {"小明": 92, "小红": 58, "小刚": 76, "小丽": 45}
+
+  bonus = [s + 5 for s in scores]                         # 加工
+  passed = [s for s in scores if s >= 60]                 # 过滤
+  fail = [name for name, s in students.items() if s < 60]  # 字典推导
+  ranking = sorted(students.items(), key=lambda x: x[1], reverse=True)
+
+【项目 2：商品价格分析】
+  prices = {"苹果": 3.5, "香蕉": 2.0, "西瓜": 15.0, "榴莲": 45.0, "樱桃": 60.0}
+
+  discount = [round(p * 0.8, 2) for p in prices.values()]      # 记得 round！
+  expensive = [name for name, p in prices.items() if p >= 30]
+  cheap = [name for name, p in prices.items() if p < 30]
+  ranking = sorted(prices.items(), key=lambda x: x[1], reverse=True)
+
+  💡 这就是"爬商品信息后做分析"的雏形（对应兴趣目标 ①）
+
+【Git 实操记录】
+  1. 建 git练习 文件夹 → git init
+  2. 创建 hello.py → git status（红色）→ git add .（绿色）
+  3. git commit -m "第一次提交"  ✅
+  4. 改文件 → 再提交 ✅（两条历史记录）
+  5. 故意改坏 → git restore hello.py → 瞬间恢复 ✅（亲测！）
+  6. PyCharm 菜单 Git → GitHub → Share Project → git-practice 上线 ✅
+  7. 工作区整体提交 → 作品集仓库 python-learning 上线 ✅
+
+════════════════════════════════════
+四、避坑手册（第 4 周）
+════════════════════════════════════
+  坑 1：for p in 字典 → p 是键不是值（老坑第 4 次出现！）
+       → 要值用 .values()，要键值用 .items()
+  坑 2：浮点数尾巴 2.8000000000000003
+       → round(结果, 2)
+  坑 3：推导式里写复杂逻辑 → 可读性差
+       → 超过一行就用普通 for 循环
+  坑 4：git add.git（挤一起、少空格）
+       → 每条命令单独一行，注意空格
+  坑 5：--online 拼错
+       → --oneline = one+line；可用 Tab 自动补全
+  坑 6：把"点击菜单路径"当命令敲进终端
+       → 约定：说"点击"= 鼠标操作；说"输入"= 敲命令
+  坑 7：push 用账号密码
+       → 必须用 Personal Access Token
+  坑 8：把 .idea/ 和个人数据文件推上去
+       → 先写 .gitignore
+
+════════════════════════════════════
+五、离线自测题（先自己答，再看答案）
+════════════════════════════════════
+  Q1. 把 "for 循环 + append" 写成列表推导式的模板是什么？
+  Q2. [x for x in nums if x > 5] 里的 if 起什么作用？
+  Q3. lambda x: x[1] 里 x 和 x[1] 分别是什么？
+  Q4. sorted(students.items(), key=lambda x: x[1]) 是按什么排序？
+  Q5. reverse=True 的作用？不加呢？
+  Q6. 3.5 * 0.8 为什么会有长尾巴？怎么处理？
+  Q7. for p in prices: 里的 p 是什么？要价格该用什么？
+  Q8. Git 的三个区域分别是什么？add 和 commit 各做什么？
+  Q9. git status 显示红色和绿色分别代表什么？
+  Q10. git restore 和 git reset --hard 的区别？
+  Q11. 为什么 push 要用 Token 而不是密码？
+  Q12. .gitignore 的作用是什么？举 3 个该忽略的例子。
+
+  【答案】
+  A1. [对 x 做什么 for x in 列表 if 条件]
+  A2. 过滤：只有满足条件的元素才进入结果列表。
+  A3. x 是列表/字典里的每个元素（这里是元组(名字, 价格)）；
+      x[1] 是元素的第 2 项（价格）。提取它作为排序依据。
+  A4. 按成绩（值）从小到大排序。
+  A5. reverse=True 表示从大到小（降序）；不加就是从大到小
+      的反面，即从小到大（升序）。
+  A6. 二进制无法精确表示 0.8，只能存近似值，乘积带极小误差。
+      用 round(结果, 2) 四舍五入。
+  A7. p 是键（水果名/学生名）。要价格用 prices.values()。
+  A8. 工作区 / 暂存区 / 版本库。
+      add：把改动装进暂存区（"装书包"）；
+      commit：把暂存区的改动存成历史存档（"交作业"）。
+  A9. 红色 = 改了但没 add；绿色 = 已 add 等 commit。
+  A10. restore 撤销【未提交】的改动（读回上次提交的样子）；
+       reset --hard 直接回到【某个历史提交】，
+       会丢弃之后的所有改动（更强势）。
+  A11. GitHub 2021 年起出于安全取消了密码认证，
+       必须用个人访问令牌（Token）作为凭证。
+  A12. 告诉 Git 哪些文件不用跟踪/上传。
+       例：.idea/（编辑器配置）、__pycache__/（缓存）、
+       个人数据文件（日记.txt 等）。
+
+════════════════════════════════════
+六、本周口诀
+════════════════════════════════════
+  推导式一行：对 x 做什么 for x in 列表 if 条件；
+  lambda 一行函数：想要按谁排，就提取谁；
+  浮点数有尾巴，round 两位保平安；
+  字典遍历要问清：values 值，items 键值；
+
+  init 开仓库，status 看颜色；
+  add 装书包，commit 存档点；
+  log 查历史，restore 回过去；
+  push 上云端，GitHub 是作品集。
+
+════════════════════════════════════════════════════════
+【下一步预告】
+  阶段二：数据科学（第 5-6 周）—— 正式进入 AI 方向！
+    第 5 周：NumPy（数值计算）+ Pandas（数据分析）
+    第 6 周：Matplotlib 可视化 + 数据分析项目
+
+  NumPy/Pandas 是数据分析的"左右手"，
+  也是你兴趣目标 ①（爬商品信息分析）的核心工具。
+  学完它，你就真的能"处理真实数据"了。
+
+  复习入口：
+    · 第1周复盘 / 第2周复盘 / 第3周复盘（notes/ 目录）
+    · 语法卡片速查表（notes/语法卡片速查表.txt）
+    · Git 指南（exercises/week4/github_push_guide.md）
+════════════════════════════════════════════════════════
