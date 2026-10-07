@@ -1,9 +1,17 @@
 ════════════════════════════════════════════════════════
-Python 语法卡片速查表（第 1-3 周全部语法）
+Python 语法卡片速查表（全阶段：第 1-6 周 + SQL 单元）
 ════════════════════════════════════════════════════════
 用法：看不懂某个语法时 → 查到它 → 照着"格式模板"抄一遍
      → 写个 3 行最小例子跑一遍 → 就算打过一次照面
 规则：新语法主动用满 3 次才算"认识"，7 次才算"熟"
+
+📌 本表覆盖（按顺序）：
+   一 基础语法(第1周) 二 数据结构(第2周) 三 函数与文件(第2-3周)
+   四 面向对象(第3周) 五 进阶语法(第4周) 六 NumPy(第5周)
+   七 Pandas(第5-6周·含数据清洗五件套) 八 Matplotlib(第6周)
+   九 Git版本控制(第4周) 十 常见报错速查 十一 SQL基础查询(第6.5单元)
+   十二 用法口诀
+   → 想找什么，直接翻对应编号。
 
 ────────────────────────────────────────
 【一、基础语法（第 1 周）】
@@ -203,7 +211,278 @@ Python 语法卡片速查表（第 1-3 周全部语法）
         elif ...: break   # 6. 退出分支必须 break
 
 ────────────────────────────────────────
-【五、常见报错速查（看不懂报错就查这里）】
+【五、进阶语法（第 4 周）】
+────────────────────────────────────────
+
+▌列表推导式（把"循环 + append"缩成一行）
+  模板：[对 x 做什么  for x in 列表  if 条件]
+  [x * 2 for x in nums]                              加工
+  [x for x in nums if x >= 60]                       过滤
+  [name for name, s in students.items() if s >= 60]  字典/元组推导
+  💡 逻辑超过一行看得累 → 老老实实用 for 循环（可读性第一）
+
+▌lambda 一行小函数
+  lambda 参数: 返回值
+  double = lambda x: x * 2
+  ⚠️ 最主要的用途：给 sorted 当"排序钥匙"
+
+▌sorted(key=) 排序（配 lambda）
+  sorted(列表)                                 升序
+  sorted(列表, reverse=True)                   降序
+  sorted(字典.items(), key=lambda x: x[1])     按【值】排
+  sorted(字典.items(), key=lambda x: x[0])     按【键】排
+  【口诀】想按谁排，就提取谁（x[0] 名字 / x[1] 值）
+
+▌map / filter（了解即可，优先用推导式）
+  list(map(lambda x: x * 2, nums))      批量加工
+  list(filter(lambda x: x > 2, nums))   过滤
+  ⚠️ Python 3 返回迭代器，要用 list() 包一下
+
+▌遍历字典的三种方式（老坑，出现过 4 次！）
+  for k in 字典              只拿【键】（裸遍历默认给键）
+  for v in 字典.values()     只拿【值】
+  for k, v in 字典.items()   键值都拿（最常用）
+  ⚠️ for p in prices → p 拿到的是【键】（水果名），不是价格！
+
+▌浮点数精度（凡和"钱"有关必看）
+  3.5 * 0.8              → 2.8000000000000003
+  round(3.5 * 0.8, 2)    → 2.8   ✅
+  【铁律】算完就 round(结果, 2)。这不是 bug，是所有语言的通病。
+
+────────────────────────────────────────
+【六、NumPy（第 5 周）】
+────────────────────────────────────────
+
+▌创建数组
+  import numpy as np                 惯例简写 np
+  np.array([1, 2, 3, 4, 5])
+  np.zeros(5)  /  np.ones(3)
+  np.arange(1, 6)        → [1 2 3 4 5]
+  np.arange(0, 10, 2)    → [0 2 4 6 8]
+
+▌属性（三个"数"别搞混）
+  a.shape    形状：(5,) 或 (5, 3)
+  a.size     元素总个数（5×3 = 15）
+  a.dtype    数据类型：int64
+  len(a)     只数第一维（二维时 = 【行数】，不等于 size！）
+  ⚠️ sum() 的结果是个数字，不能 len() —— 要个数用 .size
+
+▌向量化运算（不用写循环）
+  scores + 5     每个都 +5
+  scores * 2     每个都 ×2
+  scores ** 2    每个都平方
+  a + b          两个数组对应位置相加
+
+▌索引与切片
+  a[0] / a[-1] / a[1:3]（含头不含尾）/ a[::2]（步长2）
+  二维：a[0] = 第 0 行；a[:, 0] = 所有行的第 0 列（: 表示所有行）
+
+▌布尔索引 ⭐ 数据分析最常用
+  scores[scores >= 60]                        筛出及格的
+  scores[(scores >= 60) & (scores < 90)]      ⚠️ 每个条件都要括号，用 & 不用 and
+  np.sum(scores < 60)                         数 True 的个数 = 不及格人数（技巧）
+
+▌统计函数（一行代替累加套路 / 擂台套路）
+  .sum()  .mean()  .max()  .min()  .std()
+
+▌axis 参数 ⭐ 最容易混的点
+  scores.mean(axis=1)   压扁行 → 每【行】一个结果（每个学生的平均分）
+  scores.mean(axis=0)   压扁列 → 每【列】一个结果（每门课的平均分）
+  【记忆】axis=1 横着压（管行），axis=0 竖着压（管列）
+
+▌np.where 条件替换
+  格式：np.where(条件, 满足时用什么, 不满足时用什么)
+  np.where(scores < 60, 0, scores)           小于 60 的换成 0
+  np.where(scores >= 60, "及格", "不及格")    打标签
+  ⚠️ 结果要先接住再 print，否则屏幕上什么都没有
+
+────────────────────────────────────────
+【七、Pandas（第 5-6 周）】
+────────────────────────────────────────
+
+▌两个核心对象
+  DataFrame = 一张表（多列）    Series = 一列
+  和 NumPy 的关键区别：NumPy 按位置 [:, 0]（第0列是啥要记）
+                      Pandas 按列名 df["价格"]（一眼就懂）
+
+▌读文件（真实数据入口）
+  import pandas as pd
+  df = pd.read_csv("商品数据.csv", encoding="utf-8")
+  df = pd.read_excel("数据.xlsx")              需要 openpyxl
+  ⚠️ 中文 CSV：读用 utf-8，写用 utf-8-sig（Excel 打开才不乱码）
+
+▌侦察数据（先看长什么样）
+  df.head()       前 5 行（最常用）    df.head(3)  前 3 行
+  df.tail()       后 5 行
+  df.shape        (行数, 列数)
+  df.columns      所有列名
+  df.info()       每列类型 + 缺失情况
+  df.describe()   数值列统计摘要
+  ⚠️ df.info() 是"自己打印"没有返回值 → 放进 f-string 会显示 None！
+
+▌选列
+  df["价格"]                 选一列 → Series
+  df[["商品名称", "价格"]]    选多列 → DataFrame   ⚠️ 双层括号！
+
+▌筛选（布尔索引，用列名）
+  df[df["价格"] > 10]
+  df[df["类别"] == "水果"]
+  df[(df["价格"] > 10) & (df["类别"] == "水果")]
+  ⚠️ 组合条件每个都要括号，且用 & | 而不是 and or
+
+▌统计 / 排序
+  df["价格"].mean() / .max() / .sum() / .describe()
+  df.sort_values("价格")                             升序
+  df.sort_values("价格", ascending=False)             降序
+  df.sort_values("销量", ascending=False).head(3)     前 3 名
+
+▌新增列（真的会修改 df）
+  df["销售额"] = df["价格"] * df["销量"]     整列向量化计算
+  df["是否高价"] = df["价格"] > 20            生成 True/False 列
+  ⚠️ 执行后 df 就多了一列，后面 to_csv 会把它一起存出去
+
+▌groupby 分组统计 ⭐ Pandas 最强功能
+  df.groupby("类别")["价格"].mean()      每个类别的平均价
+  df.groupby("类别")["销量"].sum()       每个类别的总销量
+  df.groupby("类别").size()              每个类别有几个
+  df.groupby("类别")["销量"].agg(["count", "sum", "mean"])   一次要多个统计
+  【读法】按什么分组[对哪列统计].怎么统计()
+  ⚠️ 分组后"类别"变成【索引】不是普通列 → 变回表格用 .reset_index()
+
+▌保存结果
+  df.to_csv("分析结果.csv", encoding="utf-8-sig", index=False)
+  index=False 不保存自动行号；utf-8-sig 防 Excel 乱码
+  【理解】to_csv 保存的是【此刻 df 的全部内容】
+  ⚠️ groupby 的结果没接进变量 → 存不出去！先 result = ... 再接住
+
+▌数据清洗"五件套"（第 6 周核心）
+  # ① 查污染
+  df.isnull().sum()        每列有几个缺失值
+  df.duplicated().sum()    有几行重复
+  df["类别"].unique()      取值有哪些（查多余空格！）
+  df["数量"].min()         最小值（查负数）
+
+  # ② 处理缺失
+  df.dropna(subset=["数量"])     关键字段缺失 → 删整行
+  df["城市"].fillna("未知")      非关键字段 → 填充
+
+  # ③ 删除重复行
+  df.drop_duplicates()
+
+  # ④ 清理文本空格（.str 访问器）
+  df["类别"] = df["类别"].str.strip()
+  .str 常用：.strip() / .upper() / .replace() / .contains()
+
+  # ⑤ 过滤异常值 + 类型转换
+  df = df[df["数量"] > 0]
+  df = df[df["单价"] > 0]
+  df["数量"] = df["数量"].astype(int)
+
+  # ⑥ 日期处理（.dt 访问器）
+  df["日期"] = df["日期"].str.replace("/", "-")   先统一格式
+  df["日期"] = pd.to_datetime(df["日期"])
+  df["月份"] = df["日期"].dt.month
+  .dt 常用：.year / .month / .day / .dayofweek
+  ⚠️ 混合格式（- 和 / 混用）报 ValueError → 先 str.replace，
+     或 pd.to_datetime(..., format="mixed")
+
+  【清洗顺序】删重复 → 处理缺失 → 清文本 → 过滤异常 → 类型转换 → 日期
+
+▌相关系数（只能用于【数值】列！）
+  df["价格"].corr(df["销量"])      +1 强正相关 / 0 无关 / -1 强负相关
+  ⚠️ 分类变量（文字）不能算相关系数 → 改用 groupby 分组比较
+
+────────────────────────────────────────
+【八、Matplotlib 可视化（第 6 周）】
+────────────────────────────────────────
+
+▌基本流程（4 步）
+  import matplotlib.pyplot as plt
+  plt.bar(x, y)          ① 画图
+  plt.title("标题")       ② 加说明（xlabel / ylabel）
+  plt.show()             ③ 显示
+
+▌三种基础图（按用途选）
+  plt.plot(x, y)            折线图 —— 看【趋势】
+  plt.bar(x, y)             柱状图 —— 比【大小】
+  plt.scatter(x, y)         散点图 —— 看【关系】
+  plt.barh(类别, 数值)       横向柱状图 —— 类别名长时更好看
+  plt.pie(值, labels=类别)   饼图 —— 看【占比】
+
+▌⚠️ 中文显示（必设！否则全是方块 □□□）
+  plt.rcParams["font.sans-serif"] = ["SimHei"]     黑体
+  plt.rcParams["axes.unicode_minus"] = False       负号正常显示
+
+▌常用设置
+  plt.figure(figsize=(10, 6))     图片大小（宽, 高）
+  plt.xlabel("X 轴名") / plt.ylabel("Y 轴名")
+  plt.grid(True, alpha=0.3)       网格（alpha 透明度）
+  plt.xticks(rotation=45)         X 轴文字旋转防重叠
+  plt.legend()                    图例（多数据系列必须加 label）
+  plt.tight_layout()              自动调整布局（防标签被裁）
+
+▌保存图片 ⚠️ 必须在 show() 之前
+  plt.savefig("图.png", dpi=150)
+  plt.show()
+  （写反了 → 保存出空白图）
+
+▌子图（一图多张）
+  plt.figure(figsize=(15, 5))
+  plt.subplot(1, 3, 1)      1 行 3 列的第 1 个
+  plt.bar(...)
+  plt.xticks(rotation=90)   ⚠️ 设置要写在【对应子图内部】
+  plt.subplot(1, 3, 2)
+  plt.bar(...)
+  plt.tight_layout()        所有子图画完后统一调整
+  plt.savefig(...)          ⚠️ 别忘保存，否则只有前几张图生成
+  plt.show()
+  ⚠️ plt.xxx() 只作用于"当前子图"（最近一次 subplot 指定的）
+
+▌坐标轴别写反
+  barh 横向柱状图：X 轴是【数值】（柱子长度），Y 轴是【类别名】
+  饼图：没有坐标轴！不要加 xlabel / ylabel / grid
+
+────────────────────────────────────────
+【九、Git 版本控制（第 4 周）】
+────────────────────────────────────────
+
+▌三个区域（书包比喻）
+  工作区（正在改的文件）→ git add → 暂存区 → git commit → 版本库
+
+▌五个必会命令
+  git init                开启版本控制（只做一次）
+  git status              看状态（最常用！红=未 add，绿=已 add）
+  git add .               把【当前目录及子目录】的改动加入暂存区
+  git add -A              把【整个仓库】的所有改动加入暂存区
+  git commit -m "说明"     存档！
+  git log --oneline       查看历史（⚠️ one+line；git log 后按 q 退出）
+
+▌日常流程（背下来）
+  git status → git add -A → git commit -m "完成XX功能" → git push
+  【习惯】每完成一个小功能就存一次档，别攒一天！
+  ⚠️ git add . 在子文件夹执行 → 只添加该子目录的改动！在仓库根目录用 -A
+
+▌时光机
+  git restore 文件名           撤销【未提交】的改动（读档）
+  git reset --hard 存档号       回到【某个历史提交】（⚠️ 丢弃之后的改动）
+
+▌GitHub 推送
+  git remote add origin 仓库地址
+  git branch -M main
+  git push -u origin main      第一次
+  以后：git add -A → git commit -m "说明" → git push
+  ⚠️ 要求输入"密码"时要用【个人访问令牌 Token】，不是账号密码
+  ⚠️ push 报 "Connection was reset"（国内网络）→ 重试即可
+
+▌.gitignore（不该上传的东西）
+  在项目根目录建 .gitignore，写入要忽略的内容：
+    .idea/         编辑器配置（每人不同）
+    __pycache__/   Python 缓存
+    *.pyc
+    日记.txt        个人数据文件
+
+────────────────────────────────────────
+【十、常见报错速查（看不懂报错就查这里）】
 ────────────────────────────────────────
   SyntaxError          语法错误（缩进/冒号/引号写错）
   IndentationError     缩进错误（该缩没缩/多缩）
@@ -218,9 +497,232 @@ Python 语法卡片速查表（第 1-3 周全部语法）
   UnboundLocalError    变量没赋值就使用（except 后忘 return）
   LookupError          unknown encoding（utf-8 拼错！）
   EOFError             输入流用尽（程序还在等 input）
+  SyntaxWarning        无效转义序列 \p（Windows 路径写进字符串 → 前面加 r"")
+                      例：r"D:\python\python.exe"
+
+▌NumPy / Pandas 常用报错
+  ValueError           time data "2026/1/09" doesn't match format
+                       → 日期格式混用（- 和 /），先 .str.replace 统一，
+                         或 pd.to_datetime(..., format="mixed")
+  FileNotFoundError    CSV 文件名/路径不对（商品数据_csv vs .csv）
+                       → 先 print(os.getcwd()) 排查工作目录
+  TypeError            len(scores.sum()) —— 数字没有长度，要个数用 .size
+
+▌SQLite / SQL 常用报错
+  no such table: xxx        表名写错（订单表 ≠ 订单）
+                            ⚠️ 也可能是连到了【空数据库】（路径不对，
+                               sqlite3.connect 找不到会悄悄新建一个空的）
+  no such column: xxx       列名写错；或全角逗号把多个列名连成了一个
+                            （select a，b → 读到的是"a，b"这一个列名）
+  near "xxx": syntax error  SQL 关键字拼错（form → from）、或标点是全角
+  near "TODO": syntax error 练习里的 TODO 没替换掉（答案没填进三引号里）
+  AttributeError            'Connection' object has no attribute 'fetchone'
+                            → 要先 cursor = conn.cursor()，用 cursor 取结果
 
 ────────────────────────────────────────
-【六、用法口诀】
+【十一、SQL 基础查询（第 6.5 单元 · 第 1 课）】
+────────────────────────────────────────
+▌书写顺序（也是记忆顺序，顺序不能乱）
+  SELECT 列 → FROM 表 → WHERE 条件 → ORDER BY 列 DESC → LIMIT 行数;
+
+▌最常用模板（照抄改字就行）
+  SELECT * FROM 订单;                                  -- 全部列全部行
+  SELECT 商品名称, 销售额 FROM 订单;                     -- 挑列（半角逗号！）
+  SELECT * FROM 订单 WHERE 城市 = '深圳';               -- 单条件
+  SELECT * FROM 订单 WHERE 数量 >= 5 AND 类别 = '饮料';  -- 两个条件都是
+  SELECT * FROM 订单 WHERE 销售额 < 30 OR 销售额 > 500;  -- 两头都要
+  SELECT * FROM 订单 WHERE 类别 != '水果';               -- 不等于（!= 或 <>）
+  SELECT * FROM 订单 ORDER BY 销售额 DESC LIMIT 3;       -- 排序+限量
+  SELECT DISTINCT 城市 FROM 订单;                        -- 去重看取值
+
+▌比较运算符
+  =          等于（⚠️ 是【一个】=，不是 Python 的 ==）
+  !=  <>     不等于（两种写法都行）
+  >  >=  <  <=
+  ⚠️ 文字值必须用【单引号】：'深圳'；数字不加引号：5
+  ⚠️ 双引号在 SQL 里是给"列名/表名"用的，写文字会报错
+
+▌⚠️ AND / OR 优先级（面试高频陷阱）
+  AND 比 OR 先算（就像"先乘除、后加减"）
+  ❌ WHERE 城市='上海' OR 城市='深圳' AND 销售额>200
+     → SQL 理解成：城市='上海' OR (城市='深圳' AND 销售额>200)
+     → 8 行（混进了 31.5 的小额上海单，不符合要求）
+  ✅ WHERE (城市='上海' OR 城市='深圳') AND 销售额>200
+     → 4 行（正确）
+  口诀：AND 咬得紧，OR 松；要改先后，上括号。
+
+▌Python 里怎么跑 SQL（骨架）
+  import sqlite3
+  conn   = sqlite3.connect("销售.db")   # 打开数据库文件
+  cursor = conn.cursor()                # 拿执行器
+  cursor.execute("SELECT * FROM 订单 LIMIT 5")
+  rows   = cursor.fetchall()            # 列表套元组
+  conn.close()
+  # 改动数据的语句（INSERT/UPDATE/DELETE/CREATE）要 conn.commit()
+  # 只是查询（SELECT）不用 commit
+
+▌Pandas 对照
+  df.head()                ↔  SELECT * FROM 表 LIMIT 5
+  df[["a","b"]]            ↔  SELECT a, b FROM 表
+  df[df["c"]=="x"]         ↔  WHERE c = 'x'
+  df[(df.a>=5)&(df.b=="y")]↔  WHERE a >= 5 AND b = 'y'
+  df.sort_values("c")      ↔  ORDER BY c
+  df["c"].unique()         ↔  SELECT DISTINCT c FROM 表
+  df.groupby().agg()       ↔  GROUP BY（第 2 课）
+
+▌SQL 三条铁律（都是真踩过的坑）
+  ① 表名/列名逐字对齐（订单 ≠ 订单表）——电脑不会猜你的意思
+  ② 语法位置的标点必须半角（，！（）全是杀手）；
+     但字符串/注释里的中文标点随便写，不受影响
+  ③ FROM 后面放表名；SELECT / WHERE / ORDER BY 后面放列名
+
+────────────────────────────────────────
+【十一之二、SQL 聚合与分组（第 6.5 周 · 第 2 课）】⭐ 已实战验证
+────────────────────────────────────────
+
+▌聚合函数（把"一堆行"压成"一个数"）
+  COUNT(*)   数有多少行          SUM(列)   求和
+  AVG(列)    求平均              MAX(列)   最大      MIN(列)   最小
+
+▌单独用 = 整张表压成一个数
+  SELECT COUNT(*) AS 订单数, SUM(销售额) AS 总销售额,
+         ROUND(AVG(销售额), 2) AS 平均客单价
+  FROM 订单;
+  -- 结果：40 | 8148.6 | 203.72
+
+▌分组模板（核心）
+  SELECT 分组列, 聚合函数(列) AS 别名
+  FROM 表
+  WHERE 行条件            ← 可选，筛【行】
+  GROUP BY 分组列          ← 分堆
+  HAVING 堆条件            ← 可选，筛【堆】
+  ORDER BY 别名 DESC       ← 排序
+  LIMIT 行数;              ← 限量
+
+▌HAVING vs WHERE（面试高频）
+  WHERE   筛【行】· 写在 GROUP BY 【前面】· 不能用聚合函数
+  HAVING  筛【堆】· 写在 GROUP BY 【后面】· 能用聚合函数
+  写错会报：misuse of aggregate: SUM()
+  【口诀】WHERE 管分堆前，HAVING 管分堆后
+
+▌⚠️⚠️ 本课 6 个实战坑（都真的犯过）
+
+  ① ROUND 括号易错
+     ❌ round(avg(销售额,2) as 别名     ← 括号没闭合 + 2 放错层
+     ✅ round(avg(销售额), 2) as 别名
+     口诀：ROUND 管四舍五入，AVG 只算平均；2 是给 ROUND 的
+     自查：数括号，每个 ( 都要有 )
+
+  ② DESC 别拼成 DSEC（老坑家族：uft-8/--online/tow/form/DSEC）
+
+  ③ ⚠️ 忘了把【分组列】放进 SELECT —— **不报错，但结果没用**
+     ❌ select sum(销售额), count(*) from 订单 group by 类别
+        → 跑出 (4502.1, 20) —— 数字对，但不知道是哪一类！
+     ✅ select 类别, sum(销售额), count(*) from 订单 group by 类别
+     自查：写完带 GROUP BY 的 SQL，回头看 SELECT 第一列是不是分组列
+
+  ④ ⚠️⚠️ ORDER BY 不写方向 = 默认【从小到大】(ASC) —— **最阴的坑**
+     ❌ order by 销售额合计 limit 3   → 拿到【最低】3 个
+     ✅ order by 销售额合计 DESC limit 3 → 才是【最赚钱】3 个
+     铁律："前N名/最赚钱/最高/降序" → 必须写 DESC
+     自查：问自己一句"我要最大的还是最小的？"
+
+  ⑤ ⚠️ 题目说"升序"却写了 DESC —— 漏读要求（"半份作业"老毛病）
+     自查：写完回头看题目逐项打勾（要哪几列 / 什么条件 / 怎么排）
+
+  ⑥ HAVING 里用别名：SQLite ✅ 能跑，但 MySQL ❌ 不允许
+     → 跨数据库安全的写法：HAVING SUM(销售额) > 1000（写完整表达式）
+
+▌🔑🔑 本课最值钱的一条
+  5 个坑里，**3 个不报错**（缺分组列 / 排序方向 / 漏读要求）
+  → **"能跑通" ≠ "结果对"**
+  → 每次跑完不能只看"有没有报错"，还要看"数字对不对"
+
+▌本课口诀（避坑版）
+  ROUND 管四舍五入，AVG 只算平均；括号数一遍，左开右要闭；
+  DESC 不是 DSEC，跑一遍就知道；分组列放第一个，SELECT 别忘了；
+  ORDER BY 不写方向，默认从小到大；要"前N名"就写 DESC；
+  题目要求逐项对，别做半份作业；能跑通不等于结果对。
+
+────────────────────────────────────────
+【十一之三、SQL 多表连接 JOIN（第 6.5 周 · 第 3 课）】⭐ 面试必问
+────────────────────────────────────────
+
+▌为什么 JOIN：信息分表存放（订单表没有成本价，成本在另一张表）
+▌核心：按"共同列"把右表的列【贴到】左表每一行后面
+
+▌语法模板
+  SELECT 表A.列, 表B.列, 聚合函数
+  FROM 表A
+  INNER JOIN 表B ON 表A.共同列 = 表B.共同列
+  WHERE ...  GROUP BY ...  ORDER BY ...
+  （把 INNER 换成 LEFT 就是左连接；INNER 可省略，默认就是它）
+
+▌⚠️ ON 是必须的
+  漏了 ON → 每行和每行都配对 → 40 × 11 = 440 行笛卡尔积（垃圾数据）
+
+▌⚠️ 两张表有同名列时，必须写【表名.列名】
+  否则报 ambiguous column name（列名有歧义）
+
+▌三个常用变体
+  单独 JOIN 看效果：  ... INNER JOIN 商品成本 ON ... LIMIT 5
+  算毛利润：          ROUND(SUM(A.销售额 - A.数量 * B.成本价), 2)
+  找缺失数据：        LEFT JOIN ... WHERE B.共同列 IS NULL   ⭐ 最实用
+
+▌INNER vs LEFT（面试必问，一句话答案）
+  INNER JOIN  只保留【两边都匹配上】的行
+  LEFT  JOIN  保留【左表全部】行，右表匹配不上填 NULL
+  【本课数据实证】INNER = 38 行 ｜ LEFT = 40 行（差薯片、矿泉水那 2 笔）
+
+▌UNION ALL（上下拼结果，不是左右拼）
+  SELECT 'A' AS 类型, COUNT(*) AS 行数 FROM 表1 ...
+  UNION ALL
+  SELECT 'B', COUNT(*) FROM 表2 ...
+  ⚠️ 上下两段的列数要一样；列名以第一段为准
+  （JOIN 是左右拼宽，UNION ALL 是上下拼长，完全不同）
+
+▌⚠️ JOIN 最危险的陷阱：行数变多，数字虚高
+  若右表对同一个键有【多行】→ 左表 1 行变 N 行 → SUM 被重复计算
+  例：樱桃 1 笔 1140，成本表有 2 条樱桃记录 → JOIN 后 SUM = 2280 ❌
+  🔑 铁律：JOIN 之后，先跑 COUNT(*) 看行数合不合理，再算数字
+
+▌数据质量检查（新维度）
+  COUNT(DISTINCT 列)         数"有几种不同的值"（COUNT(列) 数的是行数）
+  GROUP_CONCAT(DISTINCT 列)  把多个值拼成字符串（看是哪几种）
+  ⚠️ GROUP_CONCAT 是 SQLite/MySQL 的；PostgreSQL 叫 STRING_AGG
+  查"同一实体被标成多个值"：
+    SELECT 列, COUNT(DISTINCT 类别), GROUP_CONCAT(DISTINCT 类别)
+    FROM 表 GROUP BY 列 HAVING COUNT(DISTINCT 类别) > 1
+
+▌UPDATE（改数据）⚠️ 安全铁律
+  语法：UPDATE 表名 SET 列名 = '新值' WHERE 条件
+  ① 必须先查后改（先 SELECT 确认改哪些行）
+  ② 绝不能忘 WHERE —— 不写会改【全表】！
+     实测：UPDATE 订单 SET 类别='零食' → 40 行全变成"零食"，不可恢复
+  ③ 改动数据必须 conn.commit()，否则程序一关就白改
+
+▌pandas.read_sql() 打通 Python
+  import pandas as pd
+  df = pd.read_sql("""SELECT ...""", conn)   ← 传【conn】，不是 cursor
+  df.head() / df["列"].sum()
+  【分工】SQL 取数 → Pandas 分析 → Matplotlib 出图
+  read_csv() 读文件 ｜ read_sql() 读数据库（真实工作更常用）
+
+▌本课 4 个实战坑（含 2 个复发）
+  ① ⚠️ ROUND 又漏 ", 2"（第 2 课犯过、已改对，第 3 课又犯）
+     → 动作用：写完 ROUND( 看结尾三个字符必须是 ", 2)"
+  ② 排序方向（第 2 课坑）：写完 ORDER BY 问"要最大的还是最小的？"
+  ③ 题目要求 DISTINCT 却没写（本例恰好结果一样，但换个数据就露馅）
+  ④ 题 5 没套 ROUND —— 这次运气好，但别赌
+
+▌🔑 本课最值钱的两条
+  ① 「交叉验证」：同一个查询在两处跑出不同数字 → 一定有一处错了
+     （错本来可以自己抓出来：题2 西瓜 313.5 vs 题10 西瓜 314.0）
+  ② 「数据会变」：同一句 SQL，数据变了结果就变了；
+     报告必须注明【数据截止时间】
+
+────────────────────────────────────────
+【十二、用法口诀】
 ────────────────────────────────────────
   卡片用法：照模板抄 → 跑 3 行例子 → 主动用 3 次 → 才认识
   查得到的东西不叫问题，思路层才是你的；
